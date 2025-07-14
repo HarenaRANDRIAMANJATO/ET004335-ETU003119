@@ -44,21 +44,18 @@ CREATE TABLE emprunt (
     FOREIGN KEY (id_membre) REFERENCES membre(id_membre)
 );
 
--- Insertion des membres
 INSERT INTO membre (nom, date_de_naissance, genre, email, ville, mdp, image_profil) VALUES
 ('Jean Dupont', '1990-05-15', 'M', 'jean.dupont@email.com', 'Paris', 'mdp123', 'profil_jean.jpg'),
 ('Marie Dubois', '1985-08-22', 'F', 'marie.dubois@email.com', 'Lyon', 'mdp456', 'profil_marie.jpg'),
 ('Pierre Martin', '1992-03-10', 'M', 'pierre.martin@email.com', 'Marseille', 'mdp789', 'profil_pierre.jpg'),
 ('Sophie Leroy', '1988-11-30', 'F', 'sophie.leroy@email.com', 'Toulouse', 'mdp101', 'profil_sophie.jpg');
 
--- Insertion des catégories
 INSERT INTO categorie_objet (nom_categorie) VALUES
 ('Esthétique'),
 ('Bricolage'),
 ('Mécanique'),
 ('Cuisine');
 
--- Insertion des objets (10 par membre, répartis sur les catégories)
 INSERT INTO objet (nom_objet, id_categorie, id_membre) VALUES
 -- Objets de Jean (id_membre=1)
 ('Miroir décoratif', 1, 1),
@@ -105,21 +102,16 @@ INSERT INTO objet (nom_objet, id_categorie, id_membre) VALUES
 ('Tableau décoratif', 1, 4),
 ('Perforateur', 2, 4);
 
--- Insertion des emprunts
 INSERT INTO emprunt (id_objet, id_membre, date_emprunt, date_retour) VALUES
--- Jean (id_membre=1) emprunte des objets d'autres membres
-(11, 1, '2025-01-10', '2025-01-20'), -- Palette de maquillage (Marie)
-(21, 1, '2025-02-15', NULL),        -- Cadre photo (Pierre)
-(31, 1, '2025-03-01', '2025-03-10'), -- Vase décoratif (Sophie)
--- Marie (id_membre=2) emprunte des objets
-(1, 2, '2025-02-01', '2025-02-10'),  -- Miroir décoratif (Jean)
-(23, 2, '2025-03-15', NULL),         -- Visseuse (Pierre)
-(33, 2, '2025-04-01', '2025-04-15'), -- Scie sauteuse (Sophie)
--- Pierre (id_membre=3) emprunte des objets
-(3, 3, '2025-01-20', '2025-02-01'),  -- Perceuse électrique (Jean)
-(13, 3, '2025-03-10', NULL),         -- Boîte à outils (Marie)
-(37, 3, '2025-05-01', '2025-05-10'), -- Cocotte-minute (Sophie)
--- Sophie (id_membre=4) emprunte des objets
-(7, 4, '2025-02-20', '2025-03-01'),  -- Mixeur (Jean)
-(17, 4, '2025-04-10', NULL),         -- Robot de cuisine (Marie)
-(27, 4, '2025-06-01', '2025-06-15'); -- Blender (Pierre)
+(11, 1, '2025-01-10', '2025-01-20'), 
+(21, 1, '2025-02-15', NULL),      
+(31, 1, '2025-03-01', '2025-03-10'),
+(1, 2, '2025-02-01', '2025-02-10'),  
+(23, 2, '2025-03-15', NULL),        
+(33, 2, '2025-04-01', '2025-04-15'), 
+(3, 3, '2025-01-20', '2025-02-01'),  
+(13, 3, '2025-03-10', NULL),         
+(37, 3, '2025-05-01', '2025-05-10'), 
+(7, 4, '2025-02-20', '2025-03-01'),  
+(17, 4, '2025-04-10', NULL),         
+(27, 4, '2025-06-01', '2025-06-15'); 
