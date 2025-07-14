@@ -1,17 +1,30 @@
 Exam S2
-function()
+function(12min/function)
     -verfie login(harena)
-    -insertion()
-    -filtration()
+    -insertion(Francia)
+    -filtration(harena)
+    -lister(Francia)
     
-page()
-    -login
-    -liste d'objet
-    -filtre
+page(18min/page)
+    -login(Harena)
+    -inscription(Francia)
+    -liste d'objet(Francia)
+    -filtre(Harena)
+    -deconnection(Francia)
 
-base de donnee()
+base de donnee(Harena)(10min)
     -creation de base
     -insertion
 
 Harena:
+-login
+-filtre
+-filtration
+-verfie logi
+
 Francia:
+deconnection
+-liste d'objet
+-inscription
+-insertion
+-lister
