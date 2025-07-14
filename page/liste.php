@@ -13,21 +13,17 @@ require_once '../inc/function.php';
 
 $conn = dbconnect();
 
-// Fetch categories for dropdown
 $categories = getCategorie($conn);
 if ($categories === false) {
     $categories = [];
 }
 
-// Initialize search parameters
 $id_categorie = isset($_GET['id_categorie']) && $_GET['id_categorie'] !== '' ? (int)$_GET['id_categorie'] : null;
 $nom_objet = isset($_GET['nom_objet']) ? trim($_GET['nom_objet']) : '';
 $disponible = isset($_GET['disponible']) && $_GET['disponible'] === '1' ? true : false;
 
-// Fetch objects based on search criteria
 $objets = searchObjets($conn, $id_categorie, $nom_objet, $disponible);
 
-// Activer l'affichage des erreurs pour le débogage (à supprimer en production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ?>

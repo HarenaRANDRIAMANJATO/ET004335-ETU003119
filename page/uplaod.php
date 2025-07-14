@@ -1,67 +1,52 @@
 <?php
 function handleMultipleImageUpload($files) {
-    $result = ['success' => false, 'error' => '', 'paths' => []];
+    $upload_dir = '../uploads/';
+    $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
+    $max_size = 10 * 1024 * 1024; // 10MB
+    $uploaded_paths = [];
 
-    // Check if files are uploaded
-    if (!isset($files) || !isset($files['name']) || empty($files['name'][0])) {
-        $result['error'] = "Veuillez sélectionner au moins une image.";
-        return $result;
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
     }
 
-    $allowed = ['jpg', 'jpeg', 'png'];
-    $max_size = 50 * 1024 * 1024; // 50MB
+    $found_valid_image = false;
 
-    $upload_dir = '../Uploads/';
-
-    // Ensure upload directory exists and is writable
-    if (!is_dir($upload_dir) || !is_writable($upload_dir)) {
-        $result['error'] = "Le répertoire de téléchargement n'existe pas ou n'est pas accessible.";
-        return $result;
-    }
-
-    // Process each file
     for ($i = 0; $i < count($files['name']); $i++) {
-        if ($files['error'][$i] == UPLOAD_ERR_NO_FILE) {
-            continue; // Skip empty file inputs
+        $error = $files['error'][$i];
+
+        if ($error === UPLOAD_ERR_OK) {
+            $tmp_name = $files['tmp_name'][$i];
+            $name = basename($files['name'][$i]);
+            $type = mime_content_type($tmp_name);
+            $size = filesize($tmp_name);
+
+            if (!in_array($type, $allowed_types)) {
+                continue; 
+            }
+            if ($size > $max_size) {
+                continue; 
+                
+            }
+
+            $unique_name = uniqid('img_') . '_' . $name;
+            $target_path = $upload_dir . $unique_name;
+
+            if (move_uploaded_file($tmp_name, $target_path)) {
+                $uploaded_paths[] = $target_path;
+                $found_valid_image = true;
+            }
         }
-
-        if ($files['error'][$i] != UPLOAD_ERR_OK) {
-            $result['error'] = "Erreur lors du téléchargement du fichier " . $files['name'][$i] . ".";
-            return $result;
-        }
-
-        // Validate file type
-        $ext = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed)) {
-            $result['error'] = "Le fichier " . $files['name'][$i] . " n'est pas au format JPG, JPEG ou PNG.";
-            return $result;
-        }
-
-        // Validate file size
-        if ($files['size'][$i] > $max_size) {
-            $result['error'] = "Le fichier " . $files['name'][$i] . " dépasse la taille maximale de 5 Mo.";
-            return $result;
-        }
-
-        // Generate unique filename
-        $new_filename = uniqid() . '.' . $ext;
-        $upload_path = $upload_dir . $new_filename;
-
-        // Move file
-        if (!move_uploaded_file($files['tmp_name'][$i], $upload_path)) {
-            $result['error'] = "Erreur lors du téléchargement du fichier " . $files['name'][$i] . ".";
-            return $result;
-        }
-
-        $result['paths'][] = $upload_path;
     }
 
-    if (empty($result['paths'])) {
-        $result['error'] = "Aucune image valide n'a été téléchargée.";
-        return $result;
+    if (!$found_valid_image) {
+        $default_path = '../uploads/default.jpg';
+        if (file_exists($default_path)) {
+            $uploaded_paths[] = $default_path;
+            return ['success' => true, 'paths' => $uploaded_paths];
+        } else {
+            return ['success' => false, 'error' => "Aucune image valide et image par défaut manquante."];
+        }
     }
 
-    $result['success'] = true;
-    return $result;
+    return ['success' => true, 'paths' => $uploaded_paths];
 }
-?>

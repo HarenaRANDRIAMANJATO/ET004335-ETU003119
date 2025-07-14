@@ -1,15 +1,13 @@
 <?php
 session_start();
-require_once '../inc/connexion.php'; // Includes dbconnect()
-require_once '../inc/function.php'; // Includes getCategorie
+require_once '../inc/connexion.php';
+require_once '../inc/function.php';
 
-// Get database connection
 $conn = dbconnect();
 if (!$conn) {
-    die("Erreur : La connexion à la base de données a échoué.");
+    die("Erreur : Connexion à la base de données échouée.");
 }
 
-// Check if user is logged in
 if (!isset($_SESSION['id_membre'])) {
     header("Location: login.php");
     exit();
@@ -17,91 +15,62 @@ if (!isset($_SESSION['id_membre'])) {
 
 $errors = [];
 $success = '';
-$id_categorie = isset($_POST['id_categorie']) ? $_POST['id_categorie'] : ''; // Initialize to avoid undefined variable
+$id_categorie = $_POST['id_categorie'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nom_objet = trim($_POST['nom_objet']);
-    $id_categorie = $_POST['id_categorie'];
+    $id_categorie = $_POST['id_categorie'] ?? '';
     $id_membre = $_SESSION['id_membre'];
 
-    // Validate input
-    if (empty($nom_objet)) {
-        $errors[] = "Le nom de l'objet est requis.";
-    }
-    if (empty($id_categorie)) {
-        $errors[] = "Veuillez sélectionner une catégorie.";
-    }
+    if (empty($nom_objet)) $errors[] = "Le nom de l'objet est requis.";
+    if (empty($id_categorie)) $errors[] = "Veuillez sélectionner une catégorie.";
 
-    // Handle multiple image uploads
     if (empty($errors)) {
         if (file_exists('upload.php')) {
             include 'upload.php';
-            $upload_results = handleMultipleImageUpload($_FILES['images']); // Corrected to use images[] and handleMultipleImageUpload
-            
+            $upload_results = handleMultipleImageUpload($_FILES['images']);
+
             if ($upload_results['success']) {
                 mysqli_begin_transaction($conn);
                 try {
-                    // Insert into objet table
                     $query = "INSERT INTO objet (nom_objet, id_categorie, id_membre) VALUES (?, ?, ?)";
                     $stmt = mysqli_prepare($conn, $query);
-                    if (!$stmt) {
-                        throw new Exception("Erreur de préparation de la requête: " . mysqli_error($conn));
-                    }
                     mysqli_stmt_bind_param($stmt, "sii", $nom_objet, $id_categorie, $id_membre);
-                    if (!mysqli_stmt_execute($stmt)) {
-                        throw new Exception("Erreur lors de l'insertion de l'objet: " . mysqli_stmt_error($stmt));
-                    }
+                    mysqli_stmt_execute($stmt);
                     $id_objet = mysqli_insert_id($conn);
                     mysqli_stmt_close($stmt);
 
-                    // Insert each image into images_objet table
                     foreach ($upload_results['paths'] as $image_path) {
-                        $query = "INSERT INTO images_objet (id_objet, nom_image) VALUES (?, ?)";
-                        $stmt = mysqli_prepare($conn, $query);
-                        if (!$stmt) {
-                            throw new Exception("Erreur de préparation de la requête: " . mysqli_error($conn));
-                        }
+                        $stmt = mysqli_prepare($conn, "INSERT INTO images_objet (id_objet, nom_image) VALUES (?, ?)");
                         mysqli_stmt_bind_param($stmt, "is", $id_objet, $image_path);
-                        if (!mysqli_stmt_execute($stmt)) {
-                            throw new Exception("Erreur lors de l'insertion de l'image: " . mysqli_stmt_error($stmt));
-                        }
+                        mysqli_stmt_execute($stmt);
                         mysqli_stmt_close($stmt);
                     }
-                    
+
                     mysqli_commit($conn);
                     $success = "Objet ajouté avec succès !";
                 } catch (Exception $e) {
                     mysqli_rollback($conn);
-                    // Delete uploaded images on failure
-                    foreach ($upload_results['paths'] as $image_path) {
-                        if (file_exists($image_path)) {
-                            unlink($image_path);
-                        }
+                    foreach ($upload_results['paths'] as $path) {
+                        if (file_exists($path)) unlink($path);
                     }
-                    $errors[] = $e->getMessage();
+                    $errors[] = "Erreur lors de l'ajout : " . $e->getMessage();
                 }
             } else {
                 $errors[] = $upload_results['error'];
             }
         } else {
-            $errors[] = "Erreur : Le fichier upload.php est introuvable.";
+            $errors[] = "Le fichier d'upload est introuvable.";
         }
     }
 }
 
-// Fetch categories for dropdown
-$categories = getCategorie($conn);
-if ($categories === false) {
-    $errors[] = "Erreur lors de la récupération des catégories.";
-    $categories = [];
-}
+$categories = getCategorie($conn) ?: [];
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajouter un objet</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
@@ -110,52 +79,45 @@ if ($categories === false) {
         <h2 class="text-2xl font-bold mb-6 text-center">Ajouter un objet</h2>
 
         <?php if (!empty($success)): ?>
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
-                <?php echo $success; ?>
-            </div>
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4"><?php echo $success; ?></div>
         <?php endif; ?>
 
         <?php if (!empty($errors)): ?>
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
                 <?php foreach ($errors as $error): ?>
-                    <p><?php echo $error; ?></p>
+                    <p><?= htmlspecialchars($error) ?></p>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
 
-        <form action="ajout_objet.php" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
             <div>
                 <label for="nom_objet" class="block text-sm font-medium text-gray-700">Nom de l'objet</label>
-                <input type="text" name="nom_objet" id="nom_objet" class="mt-1 block w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                <input type="text" name="nom_objet" id="nom_objet" required class="mt-1 w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
             </div>
 
-            <div class="col-auto">
+            <div>
                 <label for="id_categorie" class="block text-sm font-medium text-gray-700">Catégorie</label>
-                <select name="id_categorie" id="id_categorie" class="form-select mt-1 block w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
-                    <option value="">Toutes les catégories</option>
-                    <?php if ($categories): ?>
-                        <?php foreach ($categories as $categorie): ?>
-                            <option value="<?php echo $categorie['id_categorie']; ?>" 
-                                    <?php echo ($id_categorie == $categorie['id_categorie']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($categorie['nom_categorie']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <option value="">Aucune catégorie disponible</option>
-                    <?php endif; ?>
+                <select name="id_categorie" id="id_categorie" required class="mt-1 w-full p-2 border rounded-md">
+                    <option value="">-- Choisir une catégorie --</option>
+                    <?php foreach ($categories as $categorie): ?>
+                        <option value="<?= $categorie['id_categorie'] ?>" <?= $id_categorie == $categorie['id_categorie'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($categorie['nom_categorie']) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
             <div>
-                <label for="images" class="block text-sm font-medium text-gray-700">Images de l'objet (la première sera l'image principale)</label>
-                <input type="file" name="images[]" id="images" accept=".jpg,.jpeg,.png" multiple class="mt-1 block w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                <label for="images" class="block text-sm font-medium text-gray-700">Images (JPG/PNG, 10 Mo max)</label>
+                <input type="file" name="images[]" id="images" accept=".jpg,.jpeg,.png" multiple class="mt-1 w-full p-2 border rounded-md">
             </div>
 
             <div>
                 <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700">Ajouter l'objet</button>
             </div>
-            <div>
-                <a href="liste.php" class="text-indigo-600 hover:underline">Retour</a>
+            <div class="text-center">
+                <a href="liste.php" class="text-indigo-600 hover:underline">Retour à la liste</a>
             </div>
         </form>
     </div>
