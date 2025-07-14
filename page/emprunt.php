@@ -18,44 +18,73 @@ $error = null;
 $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $date_emprunt = isset($_POST['date_emprunt']) ? trim($_POST['date_emprunt']) : '';
+    $day_emprunt = isset($_POST['day_emprunt']) ? (int)$_POST['day_emprunt'] : 0;
     
-    if (empty($date_emprunt)) {
-        $error = "Veuillez sélectionner une date d'emprunt.";
+    // Valider le jour (entre 1 et 31)
+    if ($day_emprunt < 1 || $day_emprunt > 31) {
+        $error = "Veuillez entrer un jour valide (entre 1 et 31).";
     } else {
-        // Vérifier si l'objet est disponible
-        $query = "SELECT * FROM objet WHERE id_objet = :id_objet AND (date_retour IS NOT NULL OR date_retour IS NULL AND id_emprunt IS NULL)";
-        $stmt = $conn->prepare($query);
-        $stmt->bindParam(':id_objet', $id_objet, PDO::PARAM_INT);
-        $stmt->execute();
-        $objet = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($objet) {
-            // Insérer un nouvel emprunt
-            $query = "INSERT INTO emprunt (id_membre, id_objet, date_emprunt) VALUES (:id_membre, :id_objet, :date_emprunt)";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':id_membre', $_SESSION['id_membre'], PDO::PARAM_INT);
-            $stmt->bindParam(':id_objet', $id_objet, PDO::PARAM_INT);
-            $stmt->bindParam(':date_emprunt', $date_emprunt, PDO::PARAM_STR);
-            
-            if ($stmt->execute()) {
-                $success = "L'objet a été emprunté avec succès.";
-            } else {
-                $error = "Une erreur est survenue lors de l'emprunt.";
-            }
+        // Construire la date complète avec l'année et le mois actuels
+        $current_year = date('Y');
+        $current_month = date('m');
+        $date_emprunt = sprintf("%04d-%02d-%02d", $current_year, $current_month, $day_emprunt);
+        
+        // Vérifier si la date est valide
+        if (!checkdate($current_month, $day_emprunt, $current_year)) {
+            $error = "Le jour entré n'est pas valide pour le mois actuel.";
         } else {
-            $error = "Cet objet n'est pas disponible pour l'emprunt.";
+            // Vérifier si l'objet est disponible
+            $query = "SELECT * FROM objet WHERE id_objet = ? AND (date_retour IS NOT NULL OR date_retour IS NULL AND id_emprunt IS NULL)";
+            $stmt = $conn->prepare($query);
+            if ($stmt === false) {
+                $error = "Erreur de préparation de la requête : " . $conn->error;
+            } else {
+                $stmt->bind_param('i', $id_objet);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $objet = $result->fetch_assoc();
+
+                if ($objet) {
+                    // Insérer un nouvel emprunt
+                    $query = "INSERT INTO emprunt (id_membre, id_objet, date_emprunt) VALUES (?, ?, ?)";
+                    $stmt = $conn->prepare($query);
+                    if ($stmt === false) {
+                        $error = "Erreur de préparation de la requête : " . $conn->error;
+                    } else {
+                        $stmt->bind_param('iis', $_SESSION['id_membre'], $id_objet, $date_emprunt);
+                        if ($stmt->execute()) {
+                            $success = "L'objet a été emprunté avec succès.";
+                        } else {
+                            $error = "Une erreur est survenue lors de l'emprunt : " . $stmt->error;
+                        }
+                        $stmt->close();
+                    }
+                } else {
+                    $error = "Cet objet n'est pas disponible pour l'emprunt.";
+                }
+                if (isset($result)) {
+                    $result->free();
+                }
+            }
         }
     }
 }
 
 if ($id_objet) {
-    $query = "SELECT nom_objet FROM objet WHERE id_objet = :id_objet";
+    $query = "SELECT nom_objet FROM objet WHERE id_objet = ?";
     $stmt = $conn->prepare($query);
-    $stmt->bindParam(':id_objet', $id_objet, PDO::PARAM_INT);
-    $stmt->execute();
-    $objet = $stmt->fetch(PDO::FETCH_ASSOC);
-    $nom_objet = $objet ? htmlspecialchars($objet['nom_objet']) : 'Objet inconnu';
+    if ($stmt === false) {
+        $error = "Erreur de préparation de la requête : " . $conn->error;
+        $nom_objet = 'Objet inconnu';
+    } else {
+        $stmt->bind_param('i', $id_objet);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $objet = $result->fetch_assoc();
+        $nom_objet = $objet ? htmlspecialchars($objet['nom_objet']) : 'Objet inconnu';
+        $result->free();
+        $stmt->close();
+    }
 } else {
     $error = "Aucun objet sélectionné.";
     $nom_objet = 'Objet inconnu';
@@ -90,9 +119,9 @@ if ($id_objet) {
                 <?php else: ?>
                     <form method="POST" action="emprunt.php?id_objet=<?php echo $id_objet; ?>" class="mb-4">
                         <div class="mb-3">
-                            <label for="date_emprunt" class="form-label">Jour de l'emprunt</label>
-                            <input type="date" name="date_emprunt" id="date_emprunt" class="form-control" 
-                                   value="<?php echo date('Y-m-d'); ?>" required>
+                            <label for="day_emprunt" class="form-label">Jour de l'emprunt</label>
+                            <input type="number" name="day_emprunt" id="day_emprunt" class="form-control" 
+                                   min="1" max="31" placeholder="Entrez le jour (1-31)" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Confirmer</button>
                         <a href="liste.php" class="btn btn-outline-secondary">Annuler</a>
