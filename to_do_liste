@@ -1,0 +1,14 @@
+Exam S2
+function()
+    -insertion
+    -filtration 
+    
+page()
+    -login
+    -liste d'objet
+    -filtre
+
+base de donnee()
+    -creation de base
+    -insertion
+
