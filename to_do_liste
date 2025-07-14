@@ -1,7 +1,8 @@
 Exam S2
 function()
-    -insertion
-    -filtration 
+    -verfie login(harena)
+    -insertion()
+    -filtration()
     
 page()
     -login
@@ -12,3 +13,5 @@ base de donnee()
     -creation de base
     -insertion
 
+Harena:
+Francia:
