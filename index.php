@@ -1,4 +1,4 @@
-<?php 
-rediriger('page/login.php');
-
+<?php
+header('Location: page/login.php');
+exit;
 ?>
