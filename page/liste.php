@@ -43,14 +43,14 @@ ini_set('display_errors', 1);
                 <h2 class="mb-0">Liste des Objets</h2>
             </div>
             <div class="card-body">
-                <p>Connecté en tant que: <strong><?php echo htmlspecialchars($_SESSION['nom']); ?></strong>
+                <p>
+                    Connecté en tant que: <strong><?php echo htmlspecialchars($_SESSION['nom']); ?></strong>
                     <a href="logout.php" class="btn btn-outline-danger btn-sm">Déconnexion</a>
                     <a href="ajout_objet.php" class="btn btn-outline-success btn-sm float-end me-2">Ajouter un Objet</a>
                     <a href="filtre.php" class="btn btn-outline-primary btn-sm float-end">Filtrer par Catégorie</a>
-
                 </p>
 
-                <!-- Search Form -->
+                <!-- Formulaire de recherche -->
                 <form method="GET" action="liste.php" class="mb-4">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -59,7 +59,7 @@ ini_set('display_errors', 1);
                                 <option value="">Toutes les catégories</option>
                                 <?php foreach ($categories as $categorie): ?>
                                     <option value="<?php echo $categorie['id_categorie']; ?>" 
-                                            <?php echo ($id_categorie == $categorie['id_categorie']) ? 'selected' : ''; ?>>
+                                        <?php echo ($id_categorie == $categorie['id_categorie']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($categorie['nom_categorie']); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -83,6 +83,7 @@ ini_set('display_errors', 1);
                     </div>
                 </form>
 
+                <!-- Affichage des résultats -->
                 <?php if ($objets === false): ?>
                     <div class="alert alert-danger" role="alert">
                         Erreur lors du chargement des objets.
@@ -101,33 +102,34 @@ ini_set('display_errors', 1);
                                     <th>Catégorie</th>
                                     <th>Propriétaire</th>
                                     <th>Statut</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($objets as $objet): ?>
                                     <tr>
                                         <td>
-                                            <?php if (isset($objet['nom_image']) && $objet['nom_image'] && file_exists($objet['nom_image'])): ?>
-                                                <a href="objet_details.php?id_objet=<?php echo $objet['id_objet']; ?>">
-                                                    <img src="<?php echo htmlspecialchars($objet['nom_image']); ?>" alt="<?php echo htmlspecialchars($objet['nom_objet']); ?>" style="max-width: 50px; height: auto;">
-                                                </a>
-                                            <?php else: ?>
-                                                <a href="objet_details.php?id_objet=<?php echo $objet['id_objet']; ?>">
-                                                    <img src="../image/default.jpg" alt="Image par défaut" style="max-width: 50px; height: auto;">
-                                                </a>
-                                            <?php endif; ?>
+                                            <a href="objet_details.php?id_objet=<?php echo $objet['id_objet']; ?>">
+                                                <?php
+                                                    $image = isset($objet['nom_image']) && file_exists($objet['nom_image']) ? $objet['nom_image'] : '../image/default.jpg';
+                                                ?>
+                                                <img src="<?php echo htmlspecialchars($image); ?>" alt="Image de l'objet" style="max-width: 50px; height: auto;">
+                                            </a>
                                         </td>
                                         <td><?php echo htmlspecialchars($objet['nom_objet']); ?></td>
                                         <td><?php echo htmlspecialchars($objet['nom_categorie'] ?: 'Non catégorisé'); ?></td>
                                         <td><?php echo htmlspecialchars($objet['proprietaire']); ?></td>
                                         <td>
-                                            <?php 
-                                            if ($objet['date_retour'] === null && $objet['id_objet'] !== null) {
-                                                echo '<span class="badge bg-warning">Emprunté (en cours)</span>';
-                                            } else {
-                                                echo '<span class="badge bg-success">Disponible</span>';
-                                            }
-                                            ?>
+                                            
+                                                <a href="emprunt.php?id_objet=<?php echo $objet['id_objet']; ?>" class="btn btn-sm btn-success">Emprunter</a>
+                                           
+                                        </td>
+                                        <td>
+                                            <?php if ($objet['date_retour'] !== null): ?>
+                                                <a href="emprunt.php?id_objet=<?php echo $objet['id_objet']; ?>" class="btn btn-sm btn-success">Emprunter</a>
+                                            <?php else: ?>
+                                                <p class="btn btn-sm btn-secondary" disabled>Déjà emprunté</p>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
