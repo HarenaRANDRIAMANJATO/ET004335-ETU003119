@@ -9,8 +9,9 @@ function handleMultipleImageUpload($files) {
     }
 
     $allowed = ['jpg', 'jpeg', 'png'];
-    $max_size = 5 * 1024 * 1024; // 5MB
-    $upload_dir = '../image/';
+    $max_size = 50 * 1024 * 1024; // 50MB
+
+    $upload_dir = '../Uploads/';
 
     // Ensure upload directory exists and is writable
     if (!is_dir($upload_dir) || !is_writable($upload_dir)) {
