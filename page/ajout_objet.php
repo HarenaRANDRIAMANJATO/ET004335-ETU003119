@@ -32,13 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors[] = "Veuillez sélectionner une catégorie.";
     }
 
-    // Include upload.php for image processing
+    // Handle multiple image uploads
     if (empty($errors)) {
         if (file_exists('upload.php')) {
             include 'upload.php';
-            $upload_result = handleImageUpload($_FILES['../image']);
+            $upload_results = handleMultipleImageUpload($_FILES['images']); // Corrected to use images[] and handleMultipleImageUpload
             
-            if ($upload_result['success']) {
+            if ($upload_results['success']) {
                 mysqli_begin_transaction($conn);
                 try {
                     // Insert into objet table
@@ -54,26 +54,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $id_objet = mysqli_insert_id($conn);
                     mysqli_stmt_close($stmt);
 
-                    // Insert into images_objet table
-                    $query = "INSERT INTO images_objet (id_objet, nom_image) VALUES (?, ?)";
-                    $stmt = mysqli_prepare($conn, $query);
-                    if (!$stmt) {
-                        throw new Exception("Erreur de préparation de la requête: " . mysqli_error($conn));
+                    // Insert each image into images_objet table
+                    foreach ($upload_results['paths'] as $image_path) {
+                        $query = "INSERT INTO images_objet (id_objet, nom_image) VALUES (?, ?)";
+                        $stmt = mysqli_prepare($conn, $query);
+                        if (!$stmt) {
+                            throw new Exception("Erreur de préparation de la requête: " . mysqli_error($conn));
+                        }
+                        mysqli_stmt_bind_param($stmt, "is", $id_objet, $image_path);
+                        if (!mysqli_stmt_execute($stmt)) {
+                            throw new Exception("Erreur lors de l'insertion de l'image: " . mysqli_stmt_error($stmt));
+                        }
+                        mysqli_stmt_close($stmt);
                     }
-                    mysqli_stmt_bind_param($stmt, "is", $id_objet, $upload_result['path']);
-                    if (!mysqli_stmt_execute($stmt)) {
-                        throw new Exception("Erreur lors de l'insertion de l'image: " . mysqli_stmt_error($stmt));
-                    }
-                    mysqli_stmt_close($stmt);
                     
                     mysqli_commit($conn);
                     $success = "Objet ajouté avec succès !";
                 } catch (Exception $e) {
                     mysqli_rollback($conn);
+                    // Delete uploaded images on failure
+                    foreach ($upload_results['paths'] as $image_path) {
+                        if (file_exists($image_path)) {
+                            unlink($image_path);
+                        }
+                    }
                     $errors[] = $e->getMessage();
                 }
             } else {
-                $errors[] = $upload_result['error'];
+                $errors[] = $upload_results['error'];
             }
         } else {
             $errors[] = "Erreur : Le fichier upload.php est introuvable.";
@@ -139,15 +147,15 @@ if ($categories === false) {
             </div>
 
             <div>
-                <label for="image" class="block text-sm font-medium text-gray-700">Image de l'objet</label>
-                <input type="file" name="image" id="image" accept=".jpg,.jpeg,.png" class="mt-1 block w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" required>
+                <label for="images" class="block text-sm font-medium text-gray-700">Images de l'objet (la première sera l'image principale)</label>
+                <input type="file" name="images[]" id="images" accept=".jpg,.jpeg,.png" multiple class="mt-1 block w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
             </div>
 
             <div>
                 <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700">Ajouter l'objet</button>
             </div>
-             <div>
-                <a href="liste.php">Retour</a>
+            <div>
+                <a href="liste.php" class="text-indigo-600 hover:underline">Retour</a>
             </div>
         </form>
     </div>

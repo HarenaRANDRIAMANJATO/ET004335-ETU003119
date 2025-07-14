@@ -4,6 +4,7 @@ function(12min/function)
     -insertion(Francia)
     -filtration(harena)
     -lister(Francia)
+    -getcategorie(Harena)
     
 page(18min/page)
     -login(Harena)
@@ -11,6 +12,8 @@ page(18min/page)
     -liste d'objet(Francia)
     -filtre(Harena)
     -deconnection(Francia)
+    -ajout dobjet(Harena)
+    -details dobjet(Francia)
 
 base de donnee(Harena)(10min)
     -creation de base
@@ -21,6 +24,7 @@ Harena:
 -filtre
 -filtration
 -verfie logi
+-upload image
 
 Francia:
 deconnection
@@ -28,3 +32,17 @@ deconnection
 -inscription
 -insertion
 -lister
+-lien fichier image
+
+
+
+
+
+
+
+
+
+
+
+
+

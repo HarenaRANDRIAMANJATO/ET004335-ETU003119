@@ -73,10 +73,15 @@ function inserer($nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_
 }
 
 function getListeObjets($conn) {
+    return searchObjets($conn, null, '', false); // Default to no filters
+}
+
+function searchObjets($conn, $id_categorie, $nom_objet, $disponible) {
     if (!$conn) {
-        error_log("Erreur: Connexion à la base de données non définie dans getListeObjets");
+        error_log("Erreur: Connexion à la base de données non définie dans searchObjets");
         return false;
     }
+
     $query = "
         SELECT 
             o.id_objet,
@@ -84,64 +89,53 @@ function getListeObjets($conn) {
             c.nom_categorie,
             m.nom AS proprietaire,
             e.date_retour,
-            i.nom_image
+            (SELECT nom_image FROM images_objet i WHERE i.id_objet = o.id_objet ORDER BY i.id_image LIMIT 1) AS nom_image
         FROM objet o
         LEFT JOIN categorie_objet c ON o.id_categorie = c.id_categorie
         LEFT JOIN membre m ON o.id_membre = m.id_membre
         LEFT JOIN emprunt e ON o.id_objet = e.id_objet AND e.date_retour IS NULL
-        LEFT JOIN images_objet i ON o.id_objet = i.id_objet
-        ORDER BY o.nom_objet
+        WHERE 1=1
     ";
 
-    $result = mysqli_query($conn, $query);
+    $params = [];
+    $types = '';
 
-    if (!$result) {
-        error_log("Erreur dans getListeObjets: " . mysqli_error($conn));
-        return false;
+    // Add category filter
+    if ($id_categorie !== null) {
+        $query .= " AND o.id_categorie = ?";
+        $params[] = $id_categorie;
+        $types .= 'i';
     }
 
-    $objets = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $objets[] = $row;
+    // Add name filter
+    if (!empty($nom_objet)) {
+        $query .= " AND o.nom_objet LIKE ?";
+        $params[] = '%' . $nom_objet . '%';
+        $types .= 's';
     }
 
-    mysqli_free_result($result);
-    return $objets;
-}
-
-function filtrerParCategorie($id_categorie, $conn) {
-    if (!$conn) {
-        error_log("Erreur: Connexion à la base de données non définie dans filtrerParCategorie");
-        return false;
+    // Add availability filter
+    if ($disponible) {
+        $query .= " AND (e.date_retour IS NOT NULL OR e.id_emprunt IS NULL)";
     }
-    $query = "
-        SELECT 
-            o.id_objet,
-            o.nom_objet,
-            c.nom_categorie,
-            m.nom AS proprietaire,
-            e.date_retour
-        FROM objet o
-        LEFT JOIN categorie_objet c ON o.id_categorie = c.id_categorie
-        LEFT JOIN membre m ON o.id_membre = m.id_membre
-        LEFT JOIN emprunt e ON o.id_objet = e.id_objet AND e.date_retour IS NULL
-        WHERE o.id_categorie = ? OR ? IS NULL
-        ORDER BY o.nom_objet
-    ";
+
+    $query .= " ORDER BY o.nom_objet";
 
     $stmt = mysqli_prepare($conn, $query);
     if (!$stmt) {
-        error_log("Erreur de préparation dans filtrerParCategorie: " . mysqli_error($conn));
+        error_log("Erreur de préparation dans searchObjets: " . mysqli_error($conn));
         return false;
     }
 
-    $id_categorie = empty($id_categorie) ? null : $id_categorie;
-    mysqli_stmt_bind_param($stmt, "ii", $id_categorie, $id_categorie);
+    if (!empty($params)) {
+        mysqli_stmt_bind_param($stmt, $types, ...$params);
+    }
+
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
     if (!$result) {
-        error_log("Erreur dans filtrerParCategorie: " . mysqli_stmt_error($stmt));
+        error_log("Erreur dans searchObjets: " . mysqli_stmt_error($stmt));
         mysqli_stmt_close($stmt);
         return false;
     }
@@ -152,29 +146,16 @@ function filtrerParCategorie($id_categorie, $conn) {
     }
 
     mysqli_stmt_close($stmt);
+    mysqli_free_result($result);
     return $objets;
 }
 
+function filtrerParCategorie($id_categorie, $conn) {
+    return searchObjets($conn, $id_categorie, '', false); // Reuse searchObjets for category filter
+}
+
 function getCategories($conn) {
-    if (!$conn) {
-        error_log("Erreur: Connexion à la base de données non définie dans getCategories");
-        return false;
-    }
-    $query = "SELECT id_categorie, nom_categorie FROM categorie_objet ORDER BY nom_categorie";
-    $result = mysqli_query($conn, $query);
-
-    if (!$result) {
-        error_log("Erreur dans getCategories: " . mysqli_error($conn));
-        return false;
-    }
-
-    $categories = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $categories[] = $row;
-    }
-
-    mysqli_free_result($result);
-    return $categories;
+    return getCategorie($conn); // Alias for consistency
 }
 
 function getCategorie($conn) {
@@ -203,7 +184,7 @@ function deconnecter() {
     session_start(); 
     error_log("Déconnexion de l'utilisateur: " . ($_SESSION['email'] ?? 'inconnu'));
     session_unset(); 
-    session_destroy(); // Détruire la session
+    session_destroy();
     header('Location:../page/login.php'); 
     exit();
 }
