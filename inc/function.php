@@ -2,6 +2,10 @@
 require_once 'connexion.php'; 
 
 function verifyLogin($email, $password, $conn) {
+    if (!$conn) {
+        error_log("Erreur: Connexion à la base de données non définie dans verifyLogin");
+        return false;
+    }
     $query = "SELECT id_membre, nom, email, mdp FROM membre WHERE email = ?";
     $stmt = mysqli_prepare($conn, $query);
     
@@ -34,6 +38,10 @@ function verifyLogin($email, $password, $conn) {
 }
 
 function inserer($nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_profil, $conn) {
+    if (!$conn) {
+        error_log("Erreur: Connexion à la base de données non définie dans inserer");
+        return false;
+    }
     $query = "INSERT INTO membre (nom, date_de_naissance, genre, email, ville, mdp, image_profil) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = mysqli_prepare($conn, $query);
     
@@ -65,17 +73,23 @@ function inserer($nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_
 }
 
 function getListeObjets($conn) {
+    if (!$conn) {
+        error_log("Erreur: Connexion à la base de données non définie dans getListeObjets");
+        return false;
+    }
     $query = "
         SELECT 
             o.id_objet,
             o.nom_objet,
             c.nom_categorie,
             m.nom AS proprietaire,
-            e.date_retour
+            e.date_retour,
+            i.nom_image
         FROM objet o
         LEFT JOIN categorie_objet c ON o.id_categorie = c.id_categorie
         LEFT JOIN membre m ON o.id_membre = m.id_membre
         LEFT JOIN emprunt e ON o.id_objet = e.id_objet AND e.date_retour IS NULL
+        LEFT JOIN images_objet i ON o.id_objet = i.id_objet
         ORDER BY o.nom_objet
     ";
 
@@ -96,6 +110,10 @@ function getListeObjets($conn) {
 }
 
 function filtrerParCategorie($id_categorie, $conn) {
+    if (!$conn) {
+        error_log("Erreur: Connexion à la base de données non définie dans filtrerParCategorie");
+        return false;
+    }
     $query = "
         SELECT 
             o.id_objet,
@@ -138,11 +156,37 @@ function filtrerParCategorie($id_categorie, $conn) {
 }
 
 function getCategories($conn) {
+    if (!$conn) {
+        error_log("Erreur: Connexion à la base de données non définie dans getCategories");
+        return false;
+    }
     $query = "SELECT id_categorie, nom_categorie FROM categorie_objet ORDER BY nom_categorie";
     $result = mysqli_query($conn, $query);
 
     if (!$result) {
         error_log("Erreur dans getCategories: " . mysqli_error($conn));
+        return false;
+    }
+
+    $categories = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $categories[] = $row;
+    }
+
+    mysqli_free_result($result);
+    return $categories;
+}
+
+function getCategorie($conn) {
+    if (!$conn) {
+        error_log("Erreur: Connexion à la base de données non définie dans getCategorie");
+        return false;
+    }
+    $query = "SELECT id_categorie, nom_categorie FROM categorie_objet ORDER BY nom_categorie";
+    $result = mysqli_query($conn, $query);
+
+    if (!$result) {
+        error_log("Erreur dans getCategorie: " . mysqli_error($conn));
         return false;
     }
 

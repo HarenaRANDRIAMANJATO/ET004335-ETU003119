@@ -8,8 +8,8 @@ if (!isset($_SESSION['id_membre'])) {
     exit();
 }
 
-require_once '../inc/connexion.php'; // Inclure la connexion à la base de données
-require_once '../inc/function.php';  // Inclure les fonctions
+require_once '../inc/connexion.php';
+require_once '../inc/function.php';
 
 $conn = dbconnect();
 
@@ -36,8 +36,9 @@ ini_set('display_errors', 1);
             </div>
             <div class="card-body">
                 <p>Connecté en tant que: <strong><?php echo htmlspecialchars($_SESSION['nom']); ?></strong>
-                    <a href="logout.php" class="btn btn-outline-danger btn-sm">Déconnexion</a>
+                    (<a href="logout.php" class="btn btn-outline-danger btn-sm">Déconnexion</a>)
                     <a href="filtre.php" class="btn btn-outline-primary btn-sm float-end">Filtrer par Catégorie</a>
+                    <a href="ajout_objet.php" class="btn btn-outline-success btn-sm float-end me-2">Ajouter un Objet</a>
                 </p>
                 
                 <?php if ($objets === false): ?>
@@ -53,6 +54,7 @@ ini_set('display_errors', 1);
                         <table class="table table-striped table-bordered">
                             <thead class="table-dark">
                                 <tr>
+                                    <th>Image</th>
                                     <th>Nom de l'objet</th>
                                     <th>Catégorie</th>
                                     <th>Propriétaire</th>
@@ -62,6 +64,13 @@ ini_set('display_errors', 1);
                             <tbody>
                                 <?php foreach ($objets as $objet): ?>
                                     <tr>
+                                        <td>
+                                            <?php if (isset($objet['nom_image']) && $objet['nom_image'] && file_exists($objet['nom_image'])): ?>
+                                                <img src="<?php echo htmlspecialchars($objet['nom_image']); ?>" alt="<?php echo htmlspecialchars($objet['nom_objet']); ?>" style="max-width: 50px; height: auto;">
+                                            <?php else: ?>
+                                                <span class="text-muted">Aucune image</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo htmlspecialchars($objet['nom_objet']); ?></td>
                                         <td><?php echo htmlspecialchars($objet['nom_categorie'] ?: 'Non catégorisé'); ?></td>
                                         <td><?php echo htmlspecialchars($objet['proprietaire']); ?></td>

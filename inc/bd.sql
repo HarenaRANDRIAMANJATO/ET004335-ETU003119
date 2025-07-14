@@ -102,6 +102,8 @@ INSERT INTO objet (nom_objet, id_categorie, id_membre) VALUES
 ('Tableau décoratif', 1, 4),
 ('Perforateur', 2, 4);
 
+
+
 INSERT INTO emprunt (id_objet, id_membre, date_emprunt, date_retour) VALUES
 (11, 1, '2025-01-10', '2025-01-20'), 
 (21, 1, '2025-02-15', NULL),      
@@ -115,3 +117,22 @@ INSERT INTO emprunt (id_objet, id_membre, date_emprunt, date_retour) VALUES
 (7, 4, '2025-02-20', '2025-03-01'),  
 (17, 4, '2025-04-10', NULL),         
 (27, 4, '2025-06-01', '2025-06-15'); 
+
+
+INSERT INTO images_objet (id_objet, nom_image) VALUES
+(1, '../image/cie.jpg'),  -- Miroir décoratif (Jean)
+(3, '../image/lampe.jpg'),  -- Perceuse électrique (Jean)
+(11, '../image/cie.jpg'),  -- Palette de maquillage (Marie)
+(17, '../image/lampe.jpg'),  -- Robot de cuisine (Marie)
+(21, '../image/lampe.jpg'),  -- Cadre photo (Pierre)
+(27, '../image/cie.jpg'),  -- Blender (Pierre)
+(31, '../image/cie.jpg'),  -- Vase décoratif (Sophie)
+(37, '../image/cie.jpg');  -- Cocotte-minute (Sophie)
+(3, '../image/lampe.jpg'),  -- Mixeur (Jean)
+(4, '../image/cie.jpg'),  -- Couteau de chef (Jean)
+(5, '../image/lampe.jpg'),  -- Marteau (Marie)
+(6, '../image/cie.jpg'),  -- Clé à molette (Marie)
+(7, '../image/lampe.jpg'),  -- Tournevis (Pierre)
+(8, '../image/cie.jpg'),  -- Scie manuelle (Pierre)
+(9, '../image/lampe.jpg'),  -- Miroir de poche (Sophie)
+(10, '../image/cie.jpg');  -- Niveau à bulle (Sophie)

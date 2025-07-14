@@ -1,8 +1,8 @@
 <?php
-$connect = mysqli_connect('localhost', 'ETU004335', 'RQFC7gYC', 'db_s2_ETU004335');
-if (!$connect) {
-    die("Erreur de connexion : " . mysqli_connect_error());
-}
+// $connect = mysqli_connect('localhost', 'ETU004335', 'RQFC7gYC', 'db_s2_ETU004335');
+// if (!$connect) {
+//     die("Erreur de connexion : " . mysqli_connect_error());
+// }
 
 function dbconnect()
 {
