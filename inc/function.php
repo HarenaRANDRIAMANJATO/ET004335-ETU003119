@@ -30,7 +30,7 @@ function verifyLogin($email, $password, $conn) {
     }
     
     mysqli_stmt_close($stmt);
-    return false; // Échec de l'authentification
+    return false; 
 }
 
 function inserer($nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_profil, $conn) {
@@ -50,7 +50,7 @@ function inserer($nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_
     mysqli_stmt_bind_param($stmt, "sssssss", $nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_profil);
     
     if (mysqli_stmt_execute($stmt)) {
-        $id_membre = mysqli_insert_id($conn); // Récupérer l'ID du membre inséré
+        $id_membre = mysqli_insert_id($conn); 
         mysqli_stmt_close($stmt);
         return [
             'id_membre' => $id_membre,
@@ -60,7 +60,7 @@ function inserer($nom, $date_de_naissance, $genre, $email, $ville, $mdp, $image_
     } else {
         error_log("Erreur lors de l'insertion: " . mysqli_stmt_error($stmt));
         mysqli_stmt_close($stmt);
-        return false; // Échec de l'insertion
+        return false;
     }
 }
 
@@ -158,9 +158,9 @@ function getCategories($conn) {
 function deconnecter() {
     session_start(); 
     error_log("Déconnexion de l'utilisateur: " . ($_SESSION['email'] ?? 'inconnu'));
-    session_unset(); // Supprimer toutes les variables de session
+    session_unset(); 
     session_destroy(); // Détruire la session
-    header('Location:../page/login.php'); // Rediriger vers login.php
+    header('Location:../page/login.php'); 
     exit();
 }
 ?>
