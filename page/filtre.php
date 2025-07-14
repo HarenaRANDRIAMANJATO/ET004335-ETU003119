@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['id_membre'])) {
     $_SESSION['error'] = "Veuillez vous connecter pour accéder à cette page.";
     header('Location: login.php');
@@ -13,7 +12,11 @@ require_once '../inc/function.php';  // Inclure les fonctions
 
 $conn = dbconnect();
 
-$objets = getListeObjets($conn);
+$categories = getCategories($conn);
+
+$id_categorie = filter_input(INPUT_POST, 'id_categorie', FILTER_VALIDATE_INT) ?: null;
+
+$objets = filtrerParCategorie($id_categorie, $conn);
 
 // Activer l'affichage des erreurs pour le débogage (à supprimer en production)
 error_reporting(E_ALL);
@@ -25,28 +28,53 @@ ini_set('display_errors', 1);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des Objets</title>
+    <title>Filtrer les Objets par Catégorie</title>
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-4">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">Liste des Objets</h2>
+                <h2 class="mb-0">Filtrer les Objets par Catégorie</h2>
             </div>
             <div class="card-body">
                 <p>Connecté en tant que: <strong><?php echo htmlspecialchars($_SESSION['nom']); ?></strong>
                     <a href="logout.php" class="btn btn-outline-danger btn-sm">Déconnexion</a>
-                    <a href="filtre.php" class="btn btn-outline-primary btn-sm float-end">Filtrer par Catégorie</a>
                 </p>
                 
+                <form action="filtre.php" method="post" class="mb-4">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-auto">
+                            <label for="id_categorie" class="form-label">Catégorie:</label>
+                        </div>
+                        <div class="col-auto">
+                            <select name="id_categorie" id="id_categorie" class="form-select">
+                                <option value="">Toutes les catégories</option>
+                                <?php if ($categories): ?>
+                                    <?php foreach ($categories as $categorie): ?>
+                                        <option value="<?php echo $categorie['id_categorie']; ?>" 
+                                                <?php echo ($id_categorie == $categorie['id_categorie']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($categorie['nom_categorie']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <option value="">Aucune catégorie disponible</option>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">Filtrer</button>
+                        </div>
+                    </div>
+                </form>
+
                 <?php if ($objets === false): ?>
                     <div class="alert alert-danger" role="alert">
                         Erreur lors du chargement des objets.
                     </div>
                 <?php elseif (empty($objets)): ?>
                     <div class="alert alert-info" role="alert">
-                        Aucun objet trouvé.
+                        Aucun objet trouvé pour cette catégorie.
                     </div>
                 <?php else: ?>
                     <div class="table-responsive">
